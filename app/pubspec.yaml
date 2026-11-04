@@ -145,6 +145,7 @@ flutter:
     # The star prompt's whale girl (lib/ui/star/star_prompt_dialog.dart), 576px WebP.
     - assets/star/
     - assets/islands/
+    - assets/backdrop/
     - assets/skills/dsh-go-ui/
     - assets/skills/dsh-go-plugin/
     - assets/skills/dsh-go-guide/
