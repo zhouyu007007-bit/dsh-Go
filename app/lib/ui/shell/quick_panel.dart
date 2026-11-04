@@ -4,6 +4,7 @@
 // page. Which ones and in what order: 设置 › 界面 (quick_panel_items_sheet.dart).
 
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -97,11 +98,26 @@ class QuickPanel extends ConsumerWidget {
         ),
       ),
     );
-    // 拖出来就是毛玻璃。比抽屉再透一档，并且不带外投影：面板贴着屏幕
-    // 右边时，那圈阴影在背后发亮的内容上看起来就是一块灰。
-    // 和抽屉逐字一样的玻璃调用：不传 style、不传 blur，全部走主题里的
-    // sheet 材质。之前传了自定义 style，面板就完全丢了背景模糊。
-    return GlassSurface(tier: GlassTier.sheet, borderRadius: _radius, child: content);
+    // 面板不再走 GlassSurface：它的圆角只有左边两个，走到共用的
+    // ClipRSuperellipse 里背景模糊会整个失效（只有填充留下来，看着就是一块
+    // 半透明板）。这里自己裁一个圆角矩形、自己做 BackdropFilter，填充仍用
+    // 主题里的 sheet 材质，观感对齐抽屉。
+    final surfaces = DshSurfaces.of(context);
+    final fill = surfaces.sheet.fill;
+    return ClipRRect(
+      borderRadius: _radius,
+      child: BackdropFilter(
+        filter: ui.ImageFilter.blur(
+          sigmaX: surfaces.sheet.blurSigma,
+          sigmaY: surfaces.sheet.blurSigma,
+          tileMode: ui.TileMode.clamp,
+        ),
+        child: DecoratedBox(
+          decoration: BoxDecoration(color: fill, borderRadius: _radius),
+          child: content,
+        ),
+      ),
+    );
   }
 }
 
