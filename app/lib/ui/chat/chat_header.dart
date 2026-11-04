@@ -144,7 +144,7 @@ class _ChatHeaderState extends ConsumerState<ChatHeader> {
               ? const SizedBox.shrink()
               : ValueListenableBuilder<double>(
                   valueListenable: widget.scrolledUnder!,
-                  builder: (context, t, child) => Opacity(opacity: t, child: child),
+                  builder: (context, t, child) => t <= 0.01 ? const SizedBox.shrink() : Opacity(opacity: t, child: child),
                   child: FrostedVeil(height: top + barHeight + 12, feather: 20),
                 ),
         ),
