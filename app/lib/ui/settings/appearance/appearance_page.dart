@@ -13,6 +13,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../l10n/l10n.dart';
 import '../../../state/appearance_state.dart';
+import '../../../state/glass_state.dart';
 import '../../../state/settings_state.dart';
 import '../../common/expand_reveal.dart';
 import '../../common/pressable.dart';
@@ -79,6 +80,11 @@ class AppearancePage extends ConsumerWidget {
         SettingsSection(
           title: l10n.hubThemeLightDark,
           children: [SpotAnchor(spot: Spots.darkMode, child: const ThemeModePicker())],
+        ),
+        SettingsSection(
+          title: '玻璃',
+          footer: const Text('调低就更透，能看到背后的内容；100% 是默认值。深色模式下差别最明显。'),
+          children: const [GlassOpacitySlider()],
         ),
         SettingsSection(
           title: l10n.pluginsColors,
@@ -897,6 +903,46 @@ class _WallpaperRow extends ConsumerWidget {
         value: AccentDot(color: seed),
         onTap: () => set(!on),
         trailing: Switch(value: on, onChanged: set),
+      ),
+    );
+  }
+}
+
+
+/// 玻璃透明度：拖一下整 App 的所有玻璃（顶栏、抽屉、卡片、胶囊）一起变透，
+/// 存在 SharedPreferences 里，下次打开还是这个值。
+class GlassOpacitySlider extends ConsumerWidget {
+  const GlassOpacitySlider({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final value = ref.watch(glassOpacityProvider).opacity;
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 2, 12, 10),
+      child: Row(
+        children: [
+          Icon(Icons.blur_on, size: 20, color: theme.colorScheme.onSurfaceVariant),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Slider(
+              value: value,
+              min: GlassController.min,
+              max: GlassController.max,
+              divisions: 15,
+              label: '${(value * 100).round()}%',
+              onChanged: (v) => ref.read(glassOpacityProvider.notifier).setOpacity(v),
+            ),
+          ),
+          SizedBox(
+            width: 44,
+            child: Text(
+              '${(value * 100).round()}%',
+              textAlign: TextAlign.end,
+              style: theme.textTheme.labelMedium,
+            ),
+          ),
+        ],
       ),
     );
   }
