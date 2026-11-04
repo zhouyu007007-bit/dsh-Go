@@ -10,6 +10,16 @@ jobs:
   build:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - variant: replace
+            appid: io.github.ccch1mneyyy.dsh_app
+            label: DSH Go
+          - variant: side-by-side
+            appid: io.github.ccch1mneyyy.dsh_app.glass
+            label: DSH Go Glass
     steps:
       - uses: actions/checkout@v4
 
@@ -23,6 +33,31 @@ jobs:
           flutter-version: 3.47.7
           channel: stable
           cache: true
+
+      - name: On-device runtime from the official release
+        run: |
+          curl -fsSL -o /tmp/official.apk https://github.com/ccch1mneyyy/dsh-Go/releases/download/v1.0.10/dsh-go-1.0.10-arm64.apk
+          mkdir -p /tmp/off
+          unzip -q /tmp/official.apk "assets/runtime/*" "lib/arm64-v8a/*" -d /tmp/off
+          mkdir -p runtime/out/arm64-v8a/assets runtime/out/arm64-v8a/jniLibs/arm64-v8a
+          cp -r /tmp/off/assets/runtime runtime/out/arm64-v8a/assets/
+          cp /tmp/off/lib/arm64-v8a/libproot.so /tmp/off/lib/arm64-v8a/libproot-loader.so /tmp/off/lib/arm64-v8a/libandroid-shmem.so /tmp/off/lib/arm64-v8a/libtalloc.so runtime/out/arm64-v8a/jniLibs/arm64-v8a/
+
+      - name: Application id and label
+        run: |
+          python3 - "${{ matrix.appid }}" "${{ matrix.label }}" <<'PY'
+          import sys
+          appid, label = sys.argv[1], sys.argv[2]
+          p = 'app/android/app/build.gradle.kts'
+          s = open(p).read()
+          s = s.replace('applicationId = "io.github.ccch1mneyyy.dsh_app"', f'applicationId = "{appid}"')
+          open(p, 'w').write(s)
+          m = 'app/android/app/src/main/AndroidManifest.xml'
+          t = open(m).read()
+          t = t.replace('android:label="DSH Go"', f'android:label="{label}"')
+          open(m, 'w').write(t)
+          print('appid', appid, 'label', label)
+          PY
 
       - name: Dependencies
         working-directory: app
@@ -42,6 +77,6 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: dsh-go-glass-arm64
+          name: dsh-go-glass-${{ matrix.variant }}
           path: app/build/app/outputs/flutter-apk/app-arm64-release.apk
           if-no-files-found: error
