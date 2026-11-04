@@ -10,6 +10,7 @@ import '../common/side_insets.dart';
 import '../settings/index/spot_anchor.dart' show seekSpot;
 import '../theme/app_icons.dart';
 import '../theme/theme.dart';
+import '../wallpaper/wallpaper_backdrop.dart';
 
 /// Frame for every secondary page (settings, engine, remote, diagnostics…).
 ///
@@ -176,7 +177,7 @@ class _AppPageState extends State<AppPage> {
     }
     final page = AnnotatedRegion<SystemUiOverlayStyle>(
       value: dshSystemOverlay(theme.brightness),
-      child: AppBackdrop(
+      child: WallpaperBackdrop(
         child: Scaffold(
           backgroundColor: Colors.transparent,
           body: Stack(
