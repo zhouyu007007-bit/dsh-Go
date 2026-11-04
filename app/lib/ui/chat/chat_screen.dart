@@ -65,7 +65,6 @@ import '../settings/settings_widgets.dart' show SettingsTile;
 import '../shell/adaptive/adaptive_layout.dart' show WindowClass;
 import '../shell/drawer/folder_sheets.dart';
 import '../theme/app_icons.dart';
-import '../theme/frosted_veil.dart';
 import '../theme/theme.dart';
 import '../wallpaper/wallpaper_backdrop.dart';
 import '../workspace/workspace_switcher.dart' show showWorkspaceSheet;
@@ -1598,13 +1597,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with WidgetsBindingObse
                   // the list's 8dp bottom padding, so the last message is untouched.
                   LayoutId(
                     id: _Slot.veil,
-                    // Frosted rather than a repainted backdrop: the page behind
-                    // is a picture, and a repainted gradient reads as a band.
-                    child: ValueListenableBuilder<double>(
-                      valueListenable: _veilHeight,
-                      builder: (context, height, _) =>
-                          FrostedVeil(height: height, fromTop: false, feather: 14, sigma: 16),
-                    ),
+                    child: BackdropVeil(solidHeight: _veilHeight),
                   ),
                   LayoutId(
                     id: _Slot.header,
