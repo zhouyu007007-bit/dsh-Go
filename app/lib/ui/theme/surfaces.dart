@@ -156,9 +156,10 @@ class DshSurfaces extends ThemeExtension<DshSurfaces> {
 
   /// 浅色:晨雾渐变 + 白玻璃。渐变、阴影、实色兜底跟配色的中性色走;
   /// 玻璃本身是白的,高光也是白的 —— 换了配色,玻璃还是玻璃。
-  factory DshSurfaces.light(AppAccent accent, {bool blurEnabled = true}) {
+  factory DshSurfaces.light(AppAccent accent, {bool blurEnabled = true, double glassOpacity = 1.0}) {
     final n = NeutralTones.forAccent(accent);
     final ink = n.shadowInk;
+    Color thin(Color c) => c.withValues(alpha: (c.a * glassOpacity).clamp(0.0, 1.0));
     const white = Color(0xFFFFFFFF);
     return DshSurfaces(
       backdropTop: n.mistTop,
@@ -171,7 +172,7 @@ class DshSurfaces extends ThemeExtension<DshSurfaces> {
       accent: accent,
       blurEnabled: blurEnabled,
       chrome: GlassStyle(
-        fill: white.withValues(alpha: 0.55),
+        fill: thin(white.withValues(alpha: 0.55)),
         fallbackFill: n.mistLowest.withValues(alpha: 0.96),
         hairline: ink.withValues(alpha: 0.08),
         rim: white.withValues(alpha: 0.85),
@@ -183,7 +184,7 @@ class DshSurfaces extends ThemeExtension<DshSurfaces> {
         ],
       ),
       sheet: GlassStyle(
-        fill: n.mistLow.withValues(alpha: 0.70),
+        fill: thin(n.mistLow.withValues(alpha: 0.70)),
         fallbackFill: n.mistLow,
         hairline: ink.withValues(alpha: 0.07),
         rim: white.withValues(alpha: 0.90),
@@ -192,13 +193,13 @@ class DshSurfaces extends ThemeExtension<DshSurfaces> {
         shadows: [BoxShadow(color: ink.withValues(alpha: 0.10), blurRadius: 32, offset: const Offset(0, 8))],
       ),
       card: GlassStyle(
-        fill: white.withValues(alpha: 0.50),
+        fill: thin(white.withValues(alpha: 0.50)),
         fallbackFill: white.withValues(alpha: 0.72),
         hairline: ink.withValues(alpha: 0.06),
         rim: white.withValues(alpha: 0.70),
       ),
       pill: GlassStyle(
-        fill: white.withValues(alpha: 0.55),
+        fill: thin(white.withValues(alpha: 0.55)),
         fallbackFill: white.withValues(alpha: 0.66),
         hairline: ink.withValues(alpha: 0.07),
         rim: white.withValues(alpha: 0.75),
@@ -207,8 +208,9 @@ class DshSurfaces extends ThemeExtension<DshSurfaces> {
   }
 
   /// 深色:深海石板渐变 + 烟灰玻璃(石板与烟灰跟配色的中性色走)。
-  factory DshSurfaces.dark(AppAccent accent, {bool blurEnabled = true}) {
+  factory DshSurfaces.dark(AppAccent accent, {bool blurEnabled = true, double glassOpacity = 1.0}) {
     final n = NeutralTones.forAccent(accent);
+    Color thin(Color c) => c.withValues(alpha: (c.a * glassOpacity).clamp(0.0, 1.0));
     const white = Color(0xFFFFFFFF);
     const black = Color(0xFF000000);
     // 雾蓝里是 OKLCH(0.30, 0.022, 266):比页面高一档的石板灰。
@@ -224,7 +226,7 @@ class DshSurfaces extends ThemeExtension<DshSurfaces> {
       accent: accent,
       blurEnabled: blurEnabled,
       chrome: GlassStyle(
-        fill: smoke.withValues(alpha: 0.42),
+        fill: thin(smoke.withValues(alpha: 0.42)),
         fallbackFill: smoke.withValues(alpha: 0.97),
         hairline: white.withValues(alpha: 0.09),
         rim: white.withValues(alpha: 0.12),
@@ -236,7 +238,7 @@ class DshSurfaces extends ThemeExtension<DshSurfaces> {
         ],
       ),
       sheet: GlassStyle(
-        fill: n.sheetDark.withValues(alpha: 0.55),
+        fill: thin(n.sheetDark.withValues(alpha: 0.55)),
         fallbackFill: n.sheetDark,
         hairline: white.withValues(alpha: 0.08),
         rim: white.withValues(alpha: 0.10),
@@ -245,13 +247,13 @@ class DshSurfaces extends ThemeExtension<DshSurfaces> {
         shadows: [BoxShadow(color: black.withValues(alpha: 0.40), blurRadius: 32, offset: const Offset(0, 8))],
       ),
       card: GlassStyle(
-        fill: white.withValues(alpha: 0.10),
+        fill: thin(white.withValues(alpha: 0.10)),
         fallbackFill: white.withValues(alpha: 0.06),
         hairline: white.withValues(alpha: 0.07),
         rim: white.withValues(alpha: 0.06),
       ),
       pill: GlassStyle(
-        fill: white.withValues(alpha: 0.10),
+        fill: thin(white.withValues(alpha: 0.10)),
         fallbackFill: white.withValues(alpha: 0.07),
         hairline: white.withValues(alpha: 0.08),
         rim: white.withValues(alpha: 0.08),
