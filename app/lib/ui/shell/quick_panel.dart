@@ -99,17 +99,9 @@ class QuickPanel extends ConsumerWidget {
     );
     // 拖出来就是毛玻璃。比抽屉再透一档，并且不带外投影：面板贴着屏幕
     // 右边时，那圈阴影在背后发亮的内容上看起来就是一块灰。
-    final surfaces = DshSurfaces.of(context);
-    // 和抽屉完全同一层玻璃（包括透明度滑块控制的填充）：只去掉外投影，
-    // 贴右边缘时那圈阴影像一块灰。之前额外压了 45% 的不透明地板，滑块
-    // 一调低，面板就比抽屉实得多，背后的对话透不过来，看着像没模糊。
-    return GlassSurface(
-      tier: GlassTier.sheet,
-      borderRadius: _radius,
-      blur: true,
-      style: surfaces.sheet.copyWith(shadows: const []),
-      child: content,
-    );
+    // 和抽屉逐字一样的玻璃调用：不传 style、不传 blur，全部走主题里的
+    // sheet 材质。之前传了自定义 style，面板就完全丢了背景模糊。
+    return GlassSurface(tier: GlassTier.sheet, borderRadius: _radius, child: content);
   }
 }
 
