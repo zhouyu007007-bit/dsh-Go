@@ -9,6 +9,7 @@ import 'performance/performance_state.dart';
 import 'performance/refresh_rate.dart';
 import 'state/app_info.dart';
 import 'state/appearance_state.dart';
+import 'state/glass_state.dart';
 import 'state/locale_state.dart';
 import 'state/star_prompt.dart' show starPromptGateProvider, starPromptProvider;
 import 'state/tile_style_state.dart';
@@ -36,6 +37,7 @@ class _DshAppState extends ConsumerState<DshApp> with WidgetsBindingObserver {
   AppAccent? _accent;
   bool? _english;
   bool? _glassBlur;
+  double? _glassOpacity;
   bool? _instantPages;
   late ThemeData _light;
   late ThemeData _dark;
@@ -83,18 +85,19 @@ class _DshAppState extends ConsumerState<DshApp> with WidgetsBindingObserver {
   @override
   void didChangeAccessibilityFeatures() => setState(() {});
 
-  void _themesFor(AppAccent accent, bool english, bool glassBlur, bool instantPages) {
-    if (accent == _accent && english == _english && glassBlur == _glassBlur && instantPages == _instantPages) return;
+  void _themesFor(AppAccent accent, bool english, bool glassBlur, double glassOpacity, bool instantPages) {
+    if (accent == _accent && english == _english && glassBlur == _glassBlur && glassOpacity == _glassOpacity && instantPages == _instantPages) return;
     _accent = accent;
     _english = english;
     _glassBlur = glassBlur;
+    _glassOpacity = glassOpacity;
     _instantPages = instantPages;
     // Plugin views that ask for `accent: "app"` follow the palette.
     DshUiAppAccent.set(accent.seed.toARGB32());
     // English UI still shows Chinese content: keep its glyphs Chinese.
     final glyphs = english ? AppLocale.zhCN : null;
-    _light = buildLightTheme(accent: accent, glyphLocale: glyphs, glassBlur: glassBlur, instantPages: instantPages);
-    _dark = buildDarkTheme(accent: accent, glyphLocale: glyphs, glassBlur: glassBlur, instantPages: instantPages);
+    _light = buildLightTheme(accent: accent, glyphLocale: glyphs, glassBlur: glassBlur, glassOpacity: glassOpacity, instantPages: instantPages);
+    _dark = buildDarkTheme(accent: accent, glyphLocale: glyphs, glassBlur: glassBlur, glassOpacity: glassOpacity, instantPages: instantPages);
   }
 
   Locale _resolveLocale() {
@@ -135,7 +138,7 @@ class _DshAppState extends ConsumerState<DshApp> with WidgetsBindingObserver {
     final performance = ref.watch(performanceDefaultsProvider);
     final reduced =
         performance.reduceMotion || WidgetsBinding.instance.platformDispatcher.accessibilityFeatures.disableAnimations;
-    _themesFor(ref.watch(accentProvider), locale.languageCode == 'en', performance.blur, reduced);
+    _themesFor(ref.watch(accentProvider), locale.languageCode == 'en', performance.blur, ref.watch(glassOpacityProvider).opacity, reduced);
     if (!waiting && !_settled) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _settled = true);
     }
