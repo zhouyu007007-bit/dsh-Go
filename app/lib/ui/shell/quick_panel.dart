@@ -95,8 +95,18 @@ class QuickPanel extends ConsumerWidget {
         ),
       ),
     );
-    // 拖出来就是毛玻璃：拖动中也不退回不透明填充。
-    return GlassSurface(tier: GlassTier.sheet, borderRadius: _radius, child: content);
+    // 拖出来就是毛玻璃。比抽屉再透一档，并且不带外投影：面板贴着屏幕
+    // 右边时，那圈阴影在背后发亮的内容上看起来就是一块灰。
+    final surfaces = DshSurfaces.of(context);
+    return GlassSurface(
+      tier: GlassTier.sheet,
+      borderRadius: _radius,
+      style: surfaces.sheet.copyWith(
+        fill: surfaces.sheet.fill.withValues(alpha: surfaces.sheet.fill.a * 0.6),
+        shadows: const [],
+      ),
+      child: content,
+    );
   }
 }
 
