@@ -212,7 +212,9 @@ class _AppPageState extends State<AppPage> {
                   valueListenable: _offset,
                   // Only once content is under the bar: at rest it would just
                   // tint the glow.
-                  builder: (context, offset, child) => Opacity(opacity: (offset / 24).clamp(0.0, 1.0), child: child),
+                  builder: (context, offset, child) => offset <= 0.5
+                      ? const SizedBox.shrink()
+                      : Opacity(opacity: (offset / 24).clamp(0.0, 1.0), child: child),
                   child: FrostedVeil(height: top + 12, feather: 20),
                 ),
               ),
