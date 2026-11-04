@@ -95,16 +95,8 @@ class QuickPanel extends ConsumerWidget {
         ),
       ),
     );
-    return AnimatedBuilder(
-      animation: motion,
-      child: content,
-      builder: (context, child) => GlassSurface(
-        tier: GlassTier.sheet,
-        borderRadius: _radius,
-        blur: motion.value > 0.0 && motion.value < 1.0 ? false : null,
-        child: child,
-      ),
-    );
+    // 拖出来就是毛玻璃：拖动中也不退回不透明填充。
+    return GlassSurface(tier: GlassTier.sheet, borderRadius: _radius, child: content);
   }
 }
 
