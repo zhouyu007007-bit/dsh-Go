@@ -13,19 +13,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-24.04
-    timeout-minutes: 90
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - variant: replace
-            appid: io.github.ccch1mneyyy.dsh_app
-            label: DSH Go
-            publish: false
-          - variant: side-by-side
-            appid: io.github.ccch1mneyyy.dsh_app.glass
-            label: DSH Go Glass
-            publish: true
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
 
@@ -47,38 +35,40 @@ jobs:
           unzip -q /tmp/official.apk "assets/runtime/*" "lib/arm64-v8a/*" -d /tmp/off
           mkdir -p runtime/out/arm64-v8a/assets runtime/out/arm64-v8a/jniLibs/arm64-v8a
           cp -r /tmp/off/assets/runtime runtime/out/arm64-v8a/assets/
-          cp /tmp/off/lib/arm64-v8a/libproot.so /tmp/off/lib/arm64-v8a/libproot-loader.so /tmp/off/lib/arm64-v8a/libandroid-shmem.so /tmp/off/lib/arm64-v8a/libtalloc.so runtime/out/arm64-v8a/jniLibs/arm64-v8a/
+          cp /tmp/off/lib/arm64-v8a/libproot.so /tmp/off/lib/arm64-v8a/libproot-loader.so \
+             /tmp/off/lib/arm64-v8a/libandroid-shmem.so /tmp/off/lib/arm64-v8a/libtalloc.so \
+             runtime/out/arm64-v8a/jniLibs/arm64-v8a/
 
       - name: Application id and label
         run: |
-          python3 - "${{ matrix.appid }}" "${{ matrix.label }}" <<'PY'
-          import sys
-          appid, label = sys.argv[1], sys.argv[2]
+          python3 - <<'PY'
           p = 'app/android/app/build.gradle.kts'
           s = open(p).read()
-          s = s.replace('applicationId = "io.github.ccch1mneyyy.dsh_app"', f'applicationId = "{appid}"')
+          s = s.replace('applicationId = "io.github.ccch1mneyyy.dsh_app"', 'applicationId = "io.github.ccch1mneyyy.dsh_app.glass"')
           open(p, 'w').write(s)
           m = 'app/android/app/src/main/AndroidManifest.xml'
           t = open(m).read()
-          t = t.replace('android:label="DSH Go"', f'android:label="{label}"')
+          t = t.replace('android:label="DSH Go"', 'android:label="DSH Go Glass"')
           open(m, 'w').write(t)
-          print('appid', appid, 'label', label)
           PY
 
       - name: Signing key
-        if: matrix.variant == 'side-by-side'
-        env:
-          GLASS_KEYSTORE_B64: ${{ secrets.GLASS_KEYSTORE_B64 }}
-          GLASS_KEYSTORE_PASS: ${{ secrets.GLASS_KEYSTORE_PASS }}
-          GLASS_KEY_ALIAS: ${{ secrets.GLASS_KEY_ALIAS }}
         run: |
-          echo "$GLASS_KEYSTORE_B64" | base64 -d > app/android/glass.jks
+          mkdir -p app/android
+          echo "${{ secrets.GLASS_KEYSTORE_B64 }}" | base64 -d > app/android/glass-release.jks
           cat > app/android/key.properties <<EOF
-          storeFile=glass.jks
-          storePassword=$GLASS_KEYSTORE_PASS
-          keyAlias=$GLASS_KEY_ALIAS
-          keyPassword=$GLASS_KEYSTORE_PASS
+          storeFile=glass-release.jks
+          storePassword=${{ secrets.GLASS_KEYSTORE_PASS }}
+          keyAlias=${{ secrets.GLASS_KEYSTORE_ALIAS }}
+          keyPassword=${{ secrets.GLASS_KEYSTORE_PASS }}
           EOF
+
+      - name: Version
+        id: ver
+        run: |
+          code=$(( (10#$(TZ=Asia/Shanghai date +%Y) - 2026) * 100000000 + 10#$(TZ=Asia/Shanghai date +%m%d%H%M) ))
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          echo "name=1.0.10" >> "$GITHUB_OUTPUT"
 
       - name: Dependencies
         working-directory: app
@@ -95,53 +85,42 @@ jobs:
       - name: Build arm64 release
         working-directory: app
         run: |
-          if [ "${{ matrix.publish }}" = "true" ]; then
-            flutter build apk --release --flavor arm64 --target-platform android-arm64 \
-              --dart-define=DSH_UPDATE_FEED=https://github.com/zhouyu007007-bit/dsh-Go/releases/latest/download/update.json \
-              --dart-define=DSH_UPDATE_MIRROR= \
-              --dart-define=DSH_UPDATE_MIRRORS=
-          else
-            flutter build apk --release --flavor arm64 --target-platform android-arm64
-          fi
+          flutter build apk --release --flavor arm64 --target-platform android-arm64 \
+            --build-name "${{ steps.ver.outputs.name }}" \
+            --build-number "${{ steps.ver.outputs.code }}" \
+            --dart-define=DSH_UPDATE_MIRROR=
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: dsh-go-glass-${{ matrix.variant }}
-          path: app/build/app/outputs/flutter-apk/app-arm64-release.apk
-          if-no-files-found: error
-
-      - name: Publish release
-        if: matrix.publish == true
-        working-directory: app
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Package and manifest
         run: |
-          APK=build/app/outputs/flutter-apk/app-arm64-release.apk
-          AAPT=$(ls -d "$ANDROID_HOME"/build-tools/*/aapt2 | sort -V | tail -1)
-          BADGE=$("$AAPT" dump badging "$APK" | sed -n '/^package:/p')
-          NAME=$(printf '%s' "$BADGE" | sed -n "s/^package: name='[^']*' versionCode='[0-9]*' versionName='\([^']*\)'.*/\1/p")
-          CODE=$(printf '%s' "$BADGE" | sed -n "s/^package: name='[^']*' versionCode='\([0-9]*\)'.*/\1/p")
-          VER="${NAME}+${CODE}"
-          FILE="dsh-go-${VER}-arm64.apk"
-          cp "$APK" "$FILE"
-          python3 - "$VER" "$FILE" <<'PY'
-          import hashlib, json, os, sys, datetime
-          ver, f = sys.argv[1], sys.argv[2]
-          data = open(f, 'rb').read()
-          doc = {
-              "schema": 1,
-              "version": ver,
-              "tag": "v" + ver,
-              "title": "DSH Go Glass " + ver,
-              "publishedAt": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-              "notes": "玻璃风格自动构建（含上游同步）。",
-              "page": "https://github.com/zhouyu007007-bit/dsh-Go/releases/tag/v" + ver,
-              "assets": {"arm64": {"name": f, "size": len(data), "sha256": hashlib.sha256(data).hexdigest()}},
+          name="${{ steps.ver.outputs.name }}"
+          code="${{ steps.ver.outputs.code }}"
+          apk="dsh-go-${name}-arm64.apk"
+          cp app/build/app/outputs/flutter-apk/app-arm64-release.apk "$apk"
+          size=$(stat -c%s "$apk")
+          sha=$(sha256sum "$apk" | cut -d' ' -f1)
+          now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          cat > update.json <<EOF
+          {
+            "schema": 1,
+            "version": "${name}+${code}",
+            "tag": "glass-${code}",
+            "title": "DSH Go Glass ${name}",
+            "publishedAt": "${now}",
+            "page": "https://github.com/zhouyu007007-bit/dsh-Go/releases/tag/glass-${code}",
+            "assets": {
+              "arm64": { "name": "${apk}", "size": ${size}, "sha256": "${sha}" }
+            },
+            "notes": "玻璃版：磨砂顶栏、透明度滑块、内置雾面背景。"
           }
-          json.dump(doc, open("update.json", "w"), ensure_ascii=False)
-          print("manifest", ver, len(data))
-          PY
-          gh release create "v${VER}" "$FILE" update.json \
-            --title "DSH Go Glass ${VER}" \
-            --notes "玻璃风格自动构建（含上游同步）。" \
-            --latest
+          EOF
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: glass-${{ steps.ver.outputs.code }}
+          name: DSH Go Glass ${{ steps.ver.outputs.name }} (${{ steps.ver.outputs.code }})
+          files: |
+            update.json
+            dsh-go-${{ steps.ver.outputs.name }}-arm64.apk
+          body: |
+            玻璃版自动构建：玻璃透明度滑块（设置 → 外观）、磨砂顶栏、内置雾面背景。
+            安装后在 App 里「检查更新」即可升级到下一版。
