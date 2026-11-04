@@ -9,6 +9,7 @@ import '../common/ui_trace.dart';
 import '../common/side_insets.dart';
 import '../settings/index/spot_anchor.dart' show seekSpot;
 import '../theme/app_icons.dart';
+import '../theme/frosted_veil.dart';
 import '../theme/theme.dart';
 import '../wallpaper/wallpaper_backdrop.dart';
 
@@ -206,14 +207,13 @@ class _AppPageState extends State<AppPage> {
                 left: 0,
                 right: 0,
                 top: 0,
-                // The veil paints the page's own backdrop, so it spans the page.
-                bottom: widget.solidBar ? 0 : null,
+                height: top + 12,
                 child: ValueListenableBuilder<double>(
                   valueListenable: _offset,
                   // Only once content is under the bar: at rest it would just
                   // tint the glow.
                   builder: (context, offset, child) => Opacity(opacity: (offset / 24).clamp(0.0, 1.0), child: child),
-                  child: widget.solidBar ? BackdropVeil.top(height: top, feather: 12) : TopFade(height: top + 12),
+                  child: FrostedVeil(height: top + 12, feather: 20),
                 ),
               ),
               Positioned(
