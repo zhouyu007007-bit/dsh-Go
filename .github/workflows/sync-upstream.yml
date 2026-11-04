@@ -1,0 +1,37 @@
+name: Sync upstream
+
+on:
+  schedule:
+    # 每天北京时间 05:17 检查一次上游
+    - cron: '17 21 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Merge upstream main
+        run: |
+          git config user.name "dsh-go-glass"
+          git config user.email "glass@local"
+          git remote add upstream https://github.com/ccch1mneyyy/dsh-Go.git 2>/dev/null || true
+          git fetch upstream main --tags
+          before=$(git rev-parse HEAD)
+          git merge --no-edit upstream/main || {
+            echo "::error::上游改动和本分支的玻璃改动冲突，需要手动合并"
+            exit 1
+          }
+          after=$(git rev-parse HEAD)
+          if [ "$before" = "$after" ]; then
+            echo "已是最新，没有新提交"
+          else
+            git push origin HEAD:main
+            echo "已合并上游：$(git log -1 --oneline)"
+          fi
