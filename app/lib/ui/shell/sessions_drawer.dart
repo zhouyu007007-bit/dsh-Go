@@ -288,33 +288,8 @@ class SessionsDrawer extends ConsumerWidget {
         ),
       );
 
-    final motion = drawerMotion;
-    if (motion == null) {
-      return GlassSurface(tier: GlassTier.sheet, borderRadius: radius, child: content);
-    }
-    return AnimatedBuilder(
-      animation: motion,
-      child: content,
-      builder: (context, child) {
-        // 滑动中的面板不做背景模糊:玻璃每帧重新采样它背后的聊天内容,中低端
-        // 机上就是掉帧的主因。停稳(0 / 1)时再恢复玻璃。
-        final moving = motion.value > 0.0 && motion.value < 1.0;
-        // 停稳后不是"啪"一下开模糊:让 glass 的 settled 从 0 渐到 1,
-        // 填充从不透明慢慢让位给模糊,读起来像玻璃化开。
-        return TweenAnimationBuilder<double>(
-          tween: Tween<double>(begin: 0, end: moving ? 0.0 : 1.0),
-          duration: const Duration(milliseconds: 260),
-          curve: Curves.easeOutCubic,
-          child: child,
-          builder: (context, settled, child) => GlassSurface(
-            tier: GlassTier.sheet,
-            borderRadius: radius,
-            settled: settled,
-            child: child,
-          ),
-        );
-      },
-    );
+    // 拖出来就是毛玻璃：不再等停稳才开模糊，也不做渐变，手感更直接。
+    return GlassSurface(tier: GlassTier.sheet, borderRadius: radius, child: content);
   }
 }
 
