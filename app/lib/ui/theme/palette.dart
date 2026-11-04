@@ -69,8 +69,8 @@ abstract final class DshPalette {
   static const shadowInk = Color(0xFF0B152D);
 
   // ══ 深色:深海石板 ══════════════════════════════════════
-  static const nightTop = Color(0xFF1D222C);
-  static const nightBottom = Color(0xFF1B1C23);
+  static const nightTop = Color(0xFF2A3350);
+  static const nightBottom = Color(0xFF1E1830);
   static const night = Color(0xFF1C1F28);
   static const nightLowest = Color(0xFF14171E);
   static const nightLow = Color(0xFF232730);
