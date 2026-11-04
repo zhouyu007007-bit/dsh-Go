@@ -3,7 +3,6 @@
 // opens them the way the drawer does; what each page requires stays with the
 // page. Which ones and in what order: 设置 › 界面 (quick_panel_items_sheet.dart).
 
-import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
