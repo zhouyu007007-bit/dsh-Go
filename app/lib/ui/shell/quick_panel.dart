@@ -3,6 +3,8 @@
 // opens them the way the drawer does; what each page requires stays with the
 // page. Which ones and in what order: 设置 › 界面 (quick_panel_items_sheet.dart).
 
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -98,20 +100,17 @@ class QuickPanel extends ConsumerWidget {
     // 拖出来就是毛玻璃。比抽屉再透一档，并且不带外投影：面板贴着屏幕
     // 右边时，那圈阴影在背后发亮的内容上看起来就是一块灰。
     final surfaces = DshSurfaces.of(context);
-    // 面板宽度固定 260，右侧系统安全区留在玻璃外面：之前整块玻璃撑满
-    // 「260 + 安全区」，右边就多出一条没有内容的灰边。
-    return Padding(
-      padding: EdgeInsets.only(right: MediaQuery.paddingOf(context).right),
-      child: SizedBox(
-        width: QuickPanel.width,
-        child: GlassSurface(
-          tier: GlassTier.sheet,
-          borderRadius: _radius,
-          // 只去掉外投影（贴右边缘时像一块灰），填充保持作者的原样。
-          style: surfaces.sheet.copyWith(shadows: const []),
-          child: content,
-        ),
+    final fill = surfaces.sheet.fill;
+    // 和抽屉同一层玻璃；透明度滑块拉到底时也不再薄到「完全透明」，
+    // 至少留 45%，贴右边缘时看起来仍是一块磨砂。
+    return GlassSurface(
+      tier: GlassTier.sheet,
+      borderRadius: _radius,
+      style: surfaces.sheet.copyWith(
+        fill: fill.withValues(alpha: math.max(fill.a, 0.45)),
+        shadows: const [],
       ),
+      child: content,
     );
   }
 }
