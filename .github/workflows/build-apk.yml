@@ -104,10 +104,10 @@ jobs:
           {
             "schema": 1,
             "version": "${name}+${code}",
-            "tag": "glass-${code}",
+            "tag": "v${code}",
             "title": "DSH Go Glass ${name}",
             "publishedAt": "${now}",
-            "page": "https://github.com/zhouyu007007-bit/dsh-Go/releases/tag/glass-${code}",
+            "page": "https://github.com/zhouyu007007-bit/dsh-Go/releases/tag/v${code}",
             "assets": {
               "arm64": { "name": "${apk}", "size": ${size}, "sha256": "${sha}" }
             },
@@ -117,7 +117,7 @@ jobs:
 
       - uses: softprops/action-gh-release@v2
         with:
-          tag_name: glass-${{ steps.ver.outputs.code }}
+          tag_name: v${{ steps.ver.outputs.code }}
           name: DSH Go Glass ${{ steps.ver.outputs.name }} (${{ steps.ver.outputs.code }})
           files: |
             update.json
