@@ -17,6 +17,7 @@ import '../common/status_dot.dart';
 import '../shell/adaptive/adaptive_scaffold.dart' show AdaptiveChrome;
 import '../shell/adaptive/detail_panel_keys.dart';
 import '../theme/app_icons.dart';
+import '../theme/frosted_veil.dart';
 import '../theme/theme.dart';
 import 'header_schedule.dart';
 import 'model_sheet.dart' show ModelChip;
@@ -144,7 +145,7 @@ class _ChatHeaderState extends ConsumerState<ChatHeader> {
               : ValueListenableBuilder<double>(
                   valueListenable: widget.scrolledUnder!,
                   builder: (context, t, child) => Opacity(opacity: t, child: child),
-                  child: TopFade(height: top + barHeight + 12),
+                  child: FrostedVeil(height: top + barHeight + 12, feather: 20),
                 ),
         ),
         Padding(
