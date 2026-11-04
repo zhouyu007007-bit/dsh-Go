@@ -45,15 +45,23 @@ class AppBackdrop extends StatelessWidget {
           Positioned.fill(
             child: IgnorePointer(
               child: RepaintBoundary(
-                child: CustomPaint(
-                  painter: _BackdropPainter(
-                    top: s.backdropTop,
-                    bottom: s.backdropBottom,
-                    glowPrimary: glow ? s.glowPrimary : null,
-                    glowSecondary: glow ? s.glowSecondary : null,
-                    picture: picture,
-                  ),
-                ),
+                child: picture == null
+                    ? Image.asset(
+                        Theme.of(context).brightness == Brightness.dark
+                            ? 'assets/backdrop/os4-dark.jpg'
+                            : 'assets/backdrop/os4-light.jpg',
+                        fit: BoxFit.cover,
+                        filterQuality: FilterQuality.medium,
+                      )
+                    : CustomPaint(
+                        painter: _BackdropPainter(
+                          top: s.backdropTop,
+                          bottom: s.backdropBottom,
+                          glowPrimary: glow ? s.glowPrimary : null,
+                          glowSecondary: glow ? s.glowSecondary : null,
+                          picture: picture,
+                        ),
+                      ),
               ),
             ),
           ),
