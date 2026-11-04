@@ -134,7 +134,7 @@ class _HomeShellState extends ConsumerState<HomeShell> with TickerProviderStateM
 
   /// [QuickPanel.width], plus what it covers on a phone on its side.
   double _quickPanelWidth(BuildContext context) =>
-      math.min(QuickPanel.width + MediaQuery.paddingOf(context).right, MediaQuery.sizeOf(context).width - 56);
+      math.min(QuickPanel.width, MediaQuery.sizeOf(context).width - 56);
 
   void _slideOpen(AnimationController side) {
     FocusManager.instance.primaryFocus?.unfocus();
@@ -516,7 +516,9 @@ class _DrawerOverlay extends StatelessWidget {
             // Stack 和整块抽屉重新布局,拖动时白白多一层成本。
             Positioned(
               left: fromRight ? null : 0,
-              right: fromRight ? 0 : null,
+              // The panel keeps its width; the system's side inset stays outside
+              // it instead of widening the glass.
+              right: fromRight ? MediaQuery.paddingOf(context).right : null,
               top: 0,
               bottom: 0,
               width: width,
