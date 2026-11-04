@@ -88,6 +88,7 @@ jobs:
           flutter build apk --release --flavor arm64 --target-platform android-arm64 \
             --build-name "${{ steps.ver.outputs.name }}" \
             --build-number "${{ steps.ver.outputs.code }}" \
+            --no-tree-shake-icons \
             --dart-define=DSH_UPDATE_MIRROR=
 
       - name: Package and manifest
