@@ -54,8 +54,8 @@ jobs:
 
       - name: Signing key
         run: |
-          mkdir -p app/android
-          echo "${{ secrets.GLASS_KEYSTORE_B64 }}" | base64 -d > app/android/glass-release.jks
+          mkdir -p app/android/app
+          echo "${{ secrets.GLASS_KEYSTORE_B64 }}" | base64 -d > app/android/app/glass-release.jks
           cat > app/android/key.properties <<EOF
           storeFile=glass-release.jks
           storePassword=${{ secrets.GLASS_KEYSTORE_PASS }}
