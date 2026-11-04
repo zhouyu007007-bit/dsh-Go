@@ -25,6 +25,7 @@ import '../../state/read_list_identity.dart';
 import '../../state/workspaces_state.dart';
 import '../bots/bots_page.dart' show BotsPage, UnreadBadge;
 import '../chat/media/media_format.dart' show chatTitleShown;
+import '../common/app_dialog.dart';
 import '../common/app_sheet.dart';
 import '../common/empty_view.dart';
 import '../common/pressable.dart';
@@ -299,11 +300,19 @@ class SessionsDrawer extends ConsumerWidget {
         // 滑动中的面板不做背景模糊:玻璃每帧重新采样它背后的聊天内容,中低端
         // 机上就是掉帧的主因。停稳(0 / 1)时再恢复玻璃。
         final moving = motion.value > 0.0 && motion.value < 1.0;
-        return GlassSurface(
-          tier: GlassTier.sheet,
-          borderRadius: radius,
-          blur: moving ? false : null,
+        // 停稳后不是"啪"一下开模糊:让 glass 的 settled 从 0 渐到 1,
+        // 填充从不透明慢慢让位给模糊,读起来像真的化开。
+        return TweenAnimationBuilder<double>(
+          tween: Tween<double>(begin: 0, end: moving ? 0.0 : 1.0),
+          duration: const Duration(milliseconds: 260),
+          curve: Curves.easeOutCubic,
           child: child,
+          builder: (context, settled, child) => GlassSurface(
+            tier: GlassTier.sheet,
+            borderRadius: radius,
+            settled: settled,
+            child: child,
+          ),
         );
       },
     );
@@ -632,7 +641,7 @@ class _SessionList extends ConsumerWidget {
 
   Future<String?> _askTitle(BuildContext context, String initial) {
     final controller = TextEditingController(text: initial);
-    return showDialog<String>(
+    return showAppDialog<String>(
       context: context,
       builder: (dialog) => AlertDialog(
         title: Text(context.l10n.shellRenameChat),
