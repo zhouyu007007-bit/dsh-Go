@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 jobs:
   build:
@@ -28,16 +29,51 @@ jobs:
           channel: stable
           cache: true
 
-      - name: On-device runtime from the official release
+      - name: On-device runtime from upstream's latest release
+        id: runtime
         run: |
-          curl -fsSL -o /tmp/official.apk https://github.com/ccch1mneyyy/dsh-Go/releases/download/v1.0.10/dsh-go-1.0.10-arm64.apk
+          set -uo pipefail
+          cat > /tmp/pick.py <<'PY'
+          import json, sys
+          try:
+              d = json.load(sys.stdin)
+          except Exception:
+              sys.exit(0)
+          for a in d.get("assets", []):
+              n = a.get("name", "")
+              if n.endswith("-arm64.apk"):
+                  print(d.get("tag_name", ""))
+                  print(a["browser_download_url"])
+                  break
+          PY
+          url=""; tag=""
+          for i in 1 2 3; do
+            out="$(curl -fsSL -H 'Accept: application/vnd.github+json' https://api.github.com/repos/ccch1mneyyy/dsh-Go/releases/latest | python3 /tmp/pick.py || true)"
+            tag="$(printf '%s' "$out" | sed -n 1p)"
+            url="$(printf '%s' "$out" | sed -n 2p)"
+            [ -n "$url" ] && break
+            sleep 3
+          done
+          if [ -z "$url" ]; then
+            echo "::warning::读不到上游最新 release，回退 v1.0.10 的运行时"
+            tag="v1.0.10"
+            url="https://github.com/ccch1mneyyy/dsh-Go/releases/download/v1.0.10/dsh-go-1.0.10-arm64.apk"
+          fi
+          echo "source=$tag" >> "$GITHUB_OUTPUT"
+          echo "运行时取自 $tag"
+          curl -fsSL -o /tmp/official.apk "$url"
           mkdir -p /tmp/off
           unzip -q /tmp/official.apk "assets/runtime/*" "lib/arm64-v8a/*" -d /tmp/off
+          test -f /tmp/off/assets/runtime/manifest.json || { echo "::error::下载到的包里没有 assets/runtime"; exit 1; }
           mkdir -p runtime/out/arm64-v8a/assets runtime/out/arm64-v8a/jniLibs/arm64-v8a
           cp -r /tmp/off/assets/runtime runtime/out/arm64-v8a/assets/
-          cp /tmp/off/lib/arm64-v8a/libproot.so /tmp/off/lib/arm64-v8a/libproot-loader.so \
-             /tmp/off/lib/arm64-v8a/libandroid-shmem.so /tmp/off/lib/arm64-v8a/libtalloc.so \
-             runtime/out/arm64-v8a/jniLibs/arm64-v8a/
+          for so in libproot.so libproot-loader.so libandroid-shmem.so libtalloc.so; do
+            if [ -f "/tmp/off/lib/arm64-v8a/$so" ]; then
+              cp "/tmp/off/lib/arm64-v8a/$so" runtime/out/arm64-v8a/jniLibs/arm64-v8a/
+            else
+              echo "::warning::上游包里缺少 $so"
+            fi
+          done
 
       - name: Application id and label
         run: |
@@ -66,9 +102,12 @@ jobs:
       - name: Version
         id: ver
         run: |
+          name="$(sed -n 's/^version: *\([0-9][0-9.]*\).*/\1/p' app/pubspec.yaml | head -1)"
+          [ -n "$name" ] || name="1.0.10"
           code=$(( (10#$(TZ=Asia/Shanghai date +%Y) - 2026) * 100000000 + 10#$(TZ=Asia/Shanghai date +%m%d%H%M) ))
+          echo "name=$name" >> "$GITHUB_OUTPUT"
           echo "code=$code" >> "$GITHUB_OUTPUT"
-          echo "name=1.0.10" >> "$GITHUB_OUTPUT"
+          echo "版本 $name+$code"
 
       - name: Dependencies
         working-directory: app
@@ -111,7 +150,7 @@ jobs:
             "assets": {
               "arm64": { "name": "${apk}", "size": ${size}, "sha256": "${sha}" }
             },
-            "notes": "玻璃版：磨砂顶栏、透明度滑块、内置雾面背景。"
+            "notes": "玻璃版：磨砂顶栏、透明度滑块、内置雾面背景。运行时取自 ${{ steps.runtime.outputs.source }}。"
           }
           EOF
 
@@ -125,3 +164,19 @@ jobs:
           body: |
             玻璃版自动构建：玻璃透明度滑块（设置 → 外观）、磨砂顶栏、内置雾面背景。
             安装后在 App 里「检查更新」即可升级到下一版。
+
+      - name: Report failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          title="玻璃版构建失败"
+          run_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          body="工作流：${{ github.workflow }}；提交：${{ github.sha }}；运行：$run_url"
+          existing="$(gh issue list --state open --search "$title in:title" --json number --jq '.[0].number // empty' || true)"
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "$body"
+          else
+            gh issue create --title "$title" --body "$body"
+          fi
