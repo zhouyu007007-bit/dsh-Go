@@ -9,6 +9,7 @@ on:
 permissions:
   contents: write
   issues: write
+  actions: write
 
 jobs:
   sync:
@@ -35,6 +36,12 @@ jobs:
           else
             git push origin HEAD:main
             echo "已合并上游：$(git log -1 --oneline)"
+            # GITHUB_TOKEN 推的提交不会再触发 push 工作流（GitHub 的防循环规则），
+            # 所以这里显式叫一次构建，否则“同步成功但没人打包”。
+            gh workflow run build-apk.yml --ref main || {
+              echo "::error::同步完成，但触发构建失败"
+              exit 1
+            }
           fi
 
       - name: Report sync failure
