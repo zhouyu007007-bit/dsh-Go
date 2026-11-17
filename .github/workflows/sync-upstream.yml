@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 jobs:
   sync:
@@ -34,4 +35,20 @@ jobs:
           else
             git push origin HEAD:main
             echo "已合并上游：$(git log -1 --oneline)"
+          fi
+
+      - name: Report sync failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          title="上游同步失败：需要手动合并"
+          run_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          body="自动合并没完成（多半是上游改到了玻璃改动涉及的文件）。手动合并一次即可，处理完这个 issue 可以关掉。运行：$run_url"
+          existing="$(gh issue list --state open --search "$title in:title" --json number --jq '.[0].number // empty' || true)"
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "$body"
+          else
+            gh issue create --title "$title" --body "$body"
           fi
